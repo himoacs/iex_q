@@ -1,9 +1,9 @@
 #########################################################################################
-# Author : Himanshu Gupta																#
-# Description: IEX is a new exchange that is slowly becoming popular. It provides a lot #
-# of its data for free through its API. This code is a q/kdb+ wrapper to make it easier	#
-# to get data from IEX. 																#
-# IEX api URL: https://iextrading.com/developer/docs/#getting-started					#
+# Author : Himanshu Gupta																
+# Description: IEX is a new exchange that is slowly becoming popular. It provides a lot 
+# of its data for free through its API. This code is a q/kdb+ wrapper to make it easier	
+# to get data from IEX. 																
+# IEX api URL: https://iextrading.com/developer/docs/#getting-started					
 #########################################################################################
 
 
