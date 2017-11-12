@@ -1,3 +1,4 @@
+/
 #########################################################################################
 # Author : Himanshu Gupta																
 # Description: IEX is a new exchange that is slowly becoming popular. It provides a lot 
@@ -5,7 +6,7 @@
 # to get data from IEX. 																
 # IEX api URL: https://iextrading.com/developer/docs/#getting-started					
 #########################################################################################
-
+\
 
 main_url: "api.iextrading.com";
 prefix: "HTTP/1.0\r\nhost:www.",main_url,"\r\n\r\n";
@@ -122,7 +123,7 @@ get_minutely_summary:{[sym;date]
  }
 
 / Get information about a company such as exchange, industry, website, description, CEO etc
-/ q) get_company_info`aapl 
+/ q)get_company_info`aapl 
 
 get_company_info:{[sym]
 
@@ -142,7 +143,7 @@ get_company_info:{[sym]
  }
 
 / Get key stats about a company such as market cap, beta, revenue, debt etc
-/ q)get_company_info`aapl
+/ q)get_key_stats`aapl
  
 get_key_stats:{[sym]
 
@@ -223,7 +224,7 @@ get_company_earnings:{[sym]
   `sym xcols update sym:`$sym, EPSReportDate:"D"$EPSReportDate, fiscalEndDate:"D"$fiscalEndDate from data[`earnings]
  }
 
-/ Get most 'active' stocks with additional info such as close price, open price etc
+/ Get most 'active' stocks for last trade date with additional info such as close price, open price etc
 / q)get_most_active_stocks[]
 
 get_most_active_stocks:{
@@ -241,7 +242,7 @@ get_most_active_stocks:{
   `sym xcol update symbol:`$symbol, openTime:"P"$string(convert_epoch openTime), closeTime:"P"$string(convert_epoch closeTime), latestUpdate:"P"$string(convert_epoch latestUpdate), iexLastUpdated:"P"$string(convert_epoch iexLastUpdated), delayedPriceTime:"P"$string(convert_epoch delayedPriceTime) from data
  }
 
-/ Get stocks with highest gains with additional info such as close price, open price etc
+/ Get stocks with highest gains for last trade date with additional info such as close price, open price etc
 / q)get_most_gainers_stocks[] 
 
 get_most_gainers_stocks:{
@@ -259,7 +260,7 @@ get_most_gainers_stocks:{
   `sym xcol update symbol:`$symbol, openTime:"P"$string(convert_epoch openTime), closeTime:"P"$string(convert_epoch closeTime), latestUpdate:"P"$string(convert_epoch latestUpdate), iexLastUpdated:"P"$string(convert_epoch iexLastUpdated), delayedPriceTime:"P"$string(convert_epoch delayedPriceTime) from data
  }
 
-/ Get stocks with most loss with additional info such as close price, open price etc
+/ Get stocks with most loss for last trade date with additional info such as close price, open price etc
 / q)get_most_losers_stocks[] 
 
 get_most_losers_stocks:{
