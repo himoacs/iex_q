@@ -14,11 +14,12 @@ prefix: "HTTP/1.0\r\nhost:www.",main_url,"\r\n\r\n";
 / Function for converting epoch time
 convert_epoch:{"p"$1970.01.01D+1000000j*x};
  
-/ Function for issuing get request
-get_request:{[main_url;suffix;prefix]
-  (`$":https://",main_url) suffix," ",prefix
+/ Function for issuing GET request and getting the data in json format
+get_data:{[main_url;suffix;prefix;char_delta;identifier]
+  result: (`$":https://",main_url) suffix," ",prefix;
+  (char_delta + first result ss identifier) _ result
  }
-
+ 
 / get last trade data for one or multiple securities
 / q)get_last_trade`aapl`ibm
 / sym  price  size time
@@ -33,13 +34,9 @@ get_last_trade:{[syms]
 
   / Construct the GET request
   suffix: "GET /1.0/tops/last?symbols=",syms;
-  result: get_request[main_url;suffix;prefix];
-
-  / Remove any text from response before 'symbol'
-  json:(-3 + first result ss "symbol") _ result;
 
   / Parse json response and put into table
-  data:-29!json;
+  data:.j.k get_data[main_url;suffix;prefix;-3;"symbol"];
 
   `sym xcol update symbol:`$symbol, time:"P"$string(convert_epoch time) from data
  }
@@ -50,17 +47,10 @@ get_last_trade:{[syms]
 get_prev_day_summary:{[sym]
 
   sym:string(upper sym);
-
-  / Construct the GET request
   suffix: "GET /1.0/stock/",sym,"/previous";
-  result: get_request[main_url;suffix;prefix];
-  
-  / Remove any text from response before 'symbol'
-  json:(-2 + first result ss "symbol") _ result;
-  json:"[",json,"]";
   
   / Parse json response and put into table
-  data:-29!json;
+  data: enlist .j.k get_data[main_url;suffix;prefix;-2;"symbol"];
   
   `sym xcol update symbol:`$symbol, date:"D"$date from data
  }
@@ -81,18 +71,13 @@ get_historical_summary:{[sym;period]
 
   sym:string(upper sym);
   period:string(period);
-  
-  / Construct the GET request
   suffix: "GET /1.0/stock/",sym,"/chart/",period;
-  result: get_request[main_url;suffix;prefix];
   
   / Remove any text from response before 'minute' if period is 1d and 'date' otherwise
   txt:$[all "1d"=period;"minute";"date"];
-  json:(-2 + first result ss txt) _ result;
-  json:"[",json;
   
   / Parse json response and put into table
-  data:-29!json;
+  data:.j.k "[", get_data[main_url;suffix;prefix;-2;txt];
   
   / data has different schema for 1d vs other buckets
   $[all "1d"=period;
@@ -107,17 +92,10 @@ get_minutely_summary:{[sym;date]
 
   sym:string(upper sym);
   date:string(date);
-  
-  / Construct the GET request
   suffix: "GET /1.0/stock/",sym,"/chart/date/",date;
-  result: get_request[main_url;suffix;prefix];
-  
-  / Remove any text from response before 'minute'
-  json:(-2 + first result ss "minute") _ result;
-  json:"[",json;
   
   / Parse json response and put into table
-  data:-29!json;
+  data:.j.k "[",get_data[main_url;suffix;prefix;-2;"minute"];
   
   `sym`date`minute xcols update sym:`$sym, date:"D"$date, minute:"U"$minute from data
  }
@@ -129,14 +107,9 @@ get_company_info:{[sym]
 
   sym:string(upper sym);
   suffix: "GET /1.0/stock/",sym,"/company";
-  result: get_request[main_url;suffix;prefix];
-  
-  / Remove any text from response before 'symbol'
-  json:(-2 + first result ss "symbol") _ result;
-  json:"[",json,"]";
   
   / Parse json response and put into table
-  data:-29!json;
+  data: enlist .j.k get_data[main_url;suffix;prefix;-2;"symbol"];;
   
   / Rename symbol to sym
   `sym xcol update symbol:`$symbol from data
@@ -147,18 +120,11 @@ get_company_info:{[sym]
  
 get_key_stats:{[sym]
 
-  sym:string(upper sym);
-  
-  / Construct the GET request
+  sym:string(upper sym);  
   suffix: "GET /1.0/stock/",sym,"/stats";
-  result: get_request[main_url;suffix;prefix];
-  
-  / Remove any text from response before 'companyName'
-  json:(-2 + first result ss "companyName") _ result;
-  json:"[",json,"]";
   
   / Parse json response and put into table
-  data:-29!json;
+  data: enlist .j.k get_data[main_url;suffix;prefix;-2;"companyName"];
   
   / Update data types and rename symbol column to sym
   `sym xcol `symbol xcols update latestEPSDate:"D"$latestEPSDate, shortDate:"D"$shortDate, exDividendDate:"D"$exDividendDate, symbol:`$symbol from data
@@ -170,17 +136,10 @@ get_key_stats:{[sym]
 get_company_news:{[sym]
 
   sym:string(upper sym);
-  
-  / Construct the GET request
   suffix: "GET /1.0/stock/",sym,"/news";
-  result: get_request[main_url;suffix;prefix];
-
-  / Remove any text from response before 'datetime'
-  json:(-2 + first result ss "datetime") _ result;
-  json:"[",json;
 
   / Parse json response and put into table
-  data:-29!json;
+  data:.j.k "[",get_data[main_url;suffix;prefix;-2;"datetime"];
 
   `sym xcols update sym:`$sym, datetime:"P"$datetime from data
  }
@@ -191,15 +150,10 @@ get_company_news:{[sym]
 get_company_financials:{[sym]
 
   sym:string(upper sym);
-
-  / Construct the GET request
   suffix: "GET /1.0/stock/",sym,"/financials";
-  result: get_request[main_url;suffix;prefix];
-  
-  json:(-2 + first result ss "symbol") _ result;
   
   / Parse json response and put into table
-  data:-29!json;
+  data:.j.k get_data[main_url;suffix;prefix;-2;"symbol"];
   
   `sym xcols update sym:`$sym, reportDate:"D"$reportDate from data[`financials]
  }
@@ -210,16 +164,10 @@ get_company_financials:{[sym]
 get_company_earnings:{[sym]
 
   sym:string(upper sym);
-
-  / Construct the GET request
   suffix: "GET /1.0/stock/",sym,"/earnings";
-  result: get_request[main_url;suffix;prefix];
-  
-  / Remove any text from response before 'symbol'
-  json:(-2 + first result ss "symbol") _ result;
   
   / Parse json response and put into table
-  data:-29!json;
+  data:.j.k get_data[main_url;suffix;prefix;-2;"symbol"];
   
   `sym xcols update sym:`$sym, EPSReportDate:"D"$EPSReportDate, fiscalEndDate:"D"$fiscalEndDate from data[`earnings]
  }
@@ -228,52 +176,32 @@ get_company_earnings:{[sym]
 / q)get_most_active_stocks[]
 
 get_most_active_stocks:{
-
-  suffix: "GET /1.0/stock/market/list/mostactive";
-  result: get_request[main_url;suffix;prefix];
-  
-  / Remove any text from response before 'symbol'
-  json:(-2 + first result ss "symbol") _ result;
-  json:"[",json;
-  
-  / Parse json response and put into table
-  data:-29!json;
-  
-  `sym xcol update symbol:`$symbol, openTime:"P"$string(convert_epoch openTime), closeTime:"P"$string(convert_epoch closeTime), latestUpdate:"P"$string(convert_epoch latestUpdate), iexLastUpdated:"P"$string(convert_epoch iexLastUpdated), delayedPriceTime:"P"$string(convert_epoch delayedPriceTime) from data
+   predefined_iex_lists_data[`mostactive]
  }
 
 / Get stocks with highest gains for last trade date with additional info such as close price, open price etc
 / q)get_most_gainers_stocks[] 
 
 get_most_gainers_stocks:{
-
-  suffix: "GET /1.0/stock/market/list/gainers";
-  result: get_request[main_url;suffix;prefix];
-
-  / Remove any text from response before 'symbol'
-  json:(-2 + first result ss "symbol") _ result;
-  json:"[",json;
-
-  / Parse json response and put into table
-  data:-29!json;
-
-  `sym xcol update symbol:`$symbol, openTime:"P"$string(convert_epoch openTime), closeTime:"P"$string(convert_epoch closeTime), latestUpdate:"P"$string(convert_epoch latestUpdate), iexLastUpdated:"P"$string(convert_epoch iexLastUpdated), delayedPriceTime:"P"$string(convert_epoch delayedPriceTime) from data
+  predefined_iex_lists_data[`gainers]
  }
 
 / Get stocks with most loss for last trade date with additional info such as close price, open price etc
 / q)get_most_losers_stocks[] 
 
 get_most_losers_stocks:{
+  predefined_iex_lists_data[`losers]
+ }
 
-  suffix: "GET /1.0/stock/market/list/losers";
-  result: get_request[main_url;suffix;prefix];
-
-  / Remove any text from response before 'symbol'
-  json:(-2 + first result ss "symbol") _ result;
-  json:"[",json;
+/ Helper function for getting 'lists' data from IEX
+/ There are three types of lists: most active, gainers and losers 
+predefined_iex_lists_data:{[list]
+ 
+  list: string(list);
+  suffix: "GET /1.0/stock/market/list/",list;
 
   / Parse json response and put into table
-  data:-29!json;
+  data:.j.k "[",get_data[main_url;suffix;prefix;-2;"symbol"];
   
   `sym xcol update symbol:`$symbol, openTime:"P"$string(convert_epoch openTime), closeTime:"P"$string(convert_epoch closeTime), latestUpdate:"P"$string(convert_epoch latestUpdate), iexLastUpdated:"P"$string(convert_epoch iexLastUpdated), delayedPriceTime:"P"$string(convert_epoch delayedPriceTime) from data
  }
