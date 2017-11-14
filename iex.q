@@ -109,7 +109,7 @@ get_company_info:{[sym]
   suffix: "GET /1.0/stock/",sym,"/company";
   
   / Parse json response and put into table
-  data: enlist .j.k get_data[main_url;suffix;prefix;-2;"symbol"];;
+  data: enlist .j.k get_data[main_url;suffix;prefix;-2;"symbol"];
   
   / Rename symbol to sym
   `sym xcol update symbol:`$symbol from data
